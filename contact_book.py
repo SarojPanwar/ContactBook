@@ -1,16 +1,22 @@
 import json
+import re
 class Contact:
     def __init__(self,name,phone,email):
         self.name = name
         self.phone = phone
         self.email = email
     def __str__(self):
-        return f" Name : {self.name}, Phone : {self.phone},\
-            Email : {self.email}"
+        return f" Name : {self.name}, Phone : {self.phone}, Email : {self.email}"
 
 class ContactBook:
     def __init__(self):
         self.contacts = {}
+    
+
+    def is_valid_email(self,email):
+        pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        return re.match(pattern, email)
+    
     def add_contact(self,name, phone,email):
         self.contacts[name] = Contact(name,phone,email)
         print(f"Contact '{name}' added successfully!")
@@ -28,6 +34,7 @@ class ContactBook:
             print(contact)
         else:
              print(" Contact not found!")
+
     def update_contact(self,name,phone=None,email=None):
         if name in self.contacts:
             if phone:
@@ -38,17 +45,21 @@ class ContactBook:
         else:
             print("Contact not found!")     
     def delete_contact(self,name):
+        confirm = input("Are you sure? (y/n): ")
+        if confirm.lower() != "y":
+            return  
         if name in self.contacts:
             del self.contacts[name]
             print(f" Contact '{name}' deleted successfully!")
         
         else:
             print(" Contact not found!")
+
     def save_to_file(self,filename="contacts.json"):
         with open(filename, "w") as file:
-            json.dump({name: vars(contact) for name, \
-                       contact in self.contacts.items()}, file)
+            json.dump({name: vars(contact) for name,contact in self.contacts.items()}, file)
             print(" Contacts saved successfully!")
+
     def load_from_file(self,filename="contacts.json"):
         try:
             with open(filename,"r") as file:
@@ -56,15 +67,13 @@ class ContactBook:
                 if not contact:
                     print("File is empty. Starting fresh.")
                     return
-                data = json.load(file)
-                self.contacts = {name: Contact(**info) \
-                                 for name, info in data.items()}
+                data = json.loads(contact)
+                self.contacts = {name: Contact(**info) for name, info in data.items()}
                 print("Contacts loaded successfully!")
         except FileNotFoundError:
             print(" No saved contacts found!")
         except json.JSONDecodeError:
-            print(" File is corrupted! Starting with empty " \
-            "contact book.")
+            print("File is corrupted! Starting with empty contact book.")
             
 def main():
     contact_book = ContactBook()
@@ -81,8 +90,16 @@ def main():
 
         if choice == "1":
             name = input("Enter name: ")
-            phone = input("Enter phone: ")
-            email = input("Enter email: ")
+            while True:
+                phone = input("Enter phone: ")
+                if phone.isdigit() and len(phone)==10:
+                    break
+                print("Phone must be exactly 10 digits!")
+            while True:
+                email = input("Enter email: ")
+                if contact_book.is_valid_email(email):
+                    break
+                print("Invalid email format!")
             contact_book.add_contact(name, phone, email)
 
         elif choice == "2":
